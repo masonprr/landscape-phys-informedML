@@ -1,0 +1,2204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive 2x2 Framework</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh; /* Fixed height instead of min-height */
+            overflow: hidden; /* Keep no scrolling on body */
+            box-sizing: border-box;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-height: calc(100vh - 40px); /* Even more space */
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2.2rem;
+            margin: 0;
+            font-weight: 700;
+        }
+        
+        .framework-container {
+            position: relative;
+            width: 900px;
+            height: 700px;
+            margin: 0 auto;
+            border: 3px solid #333;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+        
+        .axis-labels {
+            position: absolute;
+            font-weight: 600;
+            color: #495057;
+            font-size: 1rem;
+        }
+        
+        .x-axis-bottom {
+            bottom: -30px;
+            left: 50%;
+            text-align: center;
+            transform: translateX(-50%);
+        }
+        
+        .y-axis-left {
+            top: 50%;
+            left: -30px;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            text-align: center;
+            transform: translateY(-50%) rotate(180deg);
+            white-space: nowrap !important;
+            width: auto !important;
+        }
+        
+        .grid-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .center-line-v {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #333;
+            transform: translateX(-50%);
+        }
+        
+        .center-line-h {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #333;
+            transform: translateY(-50%);
+        }
+        
+        .quadrant-labels {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .quad-label {
+            position: absolute;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #666;
+            text-align: center;
+            background: rgba(255,255,255,0.8);
+            padding: 5px 10px;
+            border-radius: 8px;
+            min-width: 140px; /* Add this to ensure enough space */
+            padding: 5px 30px 5px 10px; /* Increase right padding only */
+            z-index: 40; /* Ensure labels appear above company circles */
+        }
+        
+        .quad-1 { top: 20px; left: 20px; }
+        .quad-2 { top: 20px; right: 20px; }
+        .quad-3 { bottom: 20px; left: 20px; }
+        .quad-4 { bottom: 20px; right: 20px; }
+        
+        .company {
+            position: absolute;
+            background: white;
+            border: 2px solid #ccc;
+            border-radius: 50%;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: move;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            text-align: center;
+            user-select: none;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .company:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            z-index: 20;
+        }
+        
+        .company.selected {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            z-index: 30;
+        }
+        
+        .company-name {
+            font-weight: 600;
+            line-height: 1.1;
+        }
+        
+        .company-valuation {
+            font-size: 0.65em;
+            font-weight: 500;
+            color: #666;
+            margin-top: 2px;
+            line-height: 1;
+        }
+        
+        .domain-life-sciences-biotech { border-color: #e91e63; color: #e91e63; }
+        .domain-materials-chemistry { border-color: #4caf50; color: #4caf50; }
+        .domain-mechanical-multiphysics { border-color: #2196f3; color: #2196f3; }
+        .domain-manufacturing-industrial { border-color: #ff9800; color: #ff9800; }
+        .domain-electrical-electronics { border-color: #795548; color: #795548; }
+        .domain-computing-simulation-infra { border-color: #607d8b; color: #607d8b; }
+        .domain-cross-domain-platform { border-color: #9c27b0; color: #9c27b0; }
+
+        .tag-life-sciences-biotech { background: #ffebee; color: #c62828; }
+        .tag-materials-chemistry { background: #e8f5e8; color: #2e7d32; }
+        .tag-mechanical-multiphysics { background: #e3f2fd; color: #1565c0; }
+        .tag-manufacturing-industrial { background: #fff3e0; color: #ef6c00; }
+        .tag-electrical-electronics { background: #efebe9; color: #5d4037; }
+        .tag-computing-simulation-infra { background: #eceff1; color: #455a64; }
+        .tag-cross-domain-platform { background: #f3e5f5; color: #7b1fa2; }
+                        
+        .info-panel {
+            position: fixed;
+            top: 50%;
+            right: -400px;
+            transform: translateY(-50%);
+            width: 350px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            padding: 25px;
+            transition: right 0.3s ease;
+            z-index: 1000;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .info-panel.visible {
+            right: 20px;
+        }
+        
+        .info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+        }
+        
+        .info-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .close-btn {
+            background: #ff5722;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .info-section {
+            margin-bottom: 20px;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            color: #333;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        
+        .score-scale {
+            width: 100%;
+            height: 40px;
+            position: relative;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .scale-line {
+            width: 100%;
+            height: 2px;
+            background: #ddd;
+            position: relative;
+        }
+
+        .scale-tick {
+            position: absolute;
+            width: 2px;
+            height: 12px;
+            background: #666;
+            top: -5px;
+        }
+
+        .scale-indicator {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 50%;
+            top: -7px;
+            transition: left 0.3s ease;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .scale-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .domain-tags {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        
+        .domain-tag {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .funding-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .funding-item {
+            text-align: center;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        
+        .funding-amount {
+            font-weight: 700;
+            color: #28a745;
+            font-size: 1.1rem;
+        }
+        
+        .website-link {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .website-link:hover {
+            text-decoration: underline;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: -10px;  /* Position below the framework */
+            right: 30px;
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 60;
+            transform: translateY(100%);
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        
+        
+        .info-panel button:not(.close-btn) {
+            display: none !important;
+        }
+        
+        .info-panel .legend-btn {
+            display: none !important;
+        }
+        
+        .legend.visible {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .legend-overlay {
+            display: none;
+        }
+        
+        .legend-btn {
+            position: absolute;
+            bottom: -50px;  /* Position below the framework */
+            right: 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            font-size: 0.8rem;
+            z-index: 50;
+        }
+        
+        .legend-btn:hover {
+            background: #5a6fd8;
+        }
+        
+        .legend-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 6px 0;
+            font-size: 0.8rem;
+            position: relative;
+        }
+        
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 2px;
+            border: 2px solid;
+        }
+
+        .legend.visible {
+            z-index: 2000 !important; /* Higher than the quadrant buttons */
+        }
+        
+        .info-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: auto;
+            transition: background-color 0.2s ease;
+        }
+        
+        .info-icon:hover {
+            background: #5a6fd8;
+        }
+        
+        .info-tooltip {
+            position: absolute;
+            right: 100%;  /* Position to the LEFT of the icon */
+            top: 50%;
+            transform: translateY(-50%);
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            width: 250px;
+            font-size: 0.75rem;
+            line-height: 1.4;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            margin-right: 10px;  /* Changed from margin-left */
+        }
+        
+        .info-tooltip.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .info-tooltip::before {
+            content: '';
+            position: absolute;
+            right: -6px;  /* Position arrow on the right */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-left: 6px solid white;  /* Arrow points right */
+        }
+        .quad-info-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 18px;
+            height: 18px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            z-index: 100;
+            pointer-events: auto;
+        }
+
+        .quad-info-btn:hover {
+            background: #5a6fd8;
+        }
+
+        .quad-info-popup {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            width: 300px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .quad-info-popup.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .quad-info-popup h4 {
+            color: #667eea;
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+        }
+
+        .quad-info-popup .popup-badge {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .quad-info-popup p {
+            color: #555;
+            margin: 0.5rem 0;
+            font-size: 0.85rem;
+        }
+        .methodology-note {
+            max-width: 1400px;
+            margin: 70px auto 20px auto; /* Changed from 20px to 70px top margin */
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .note-container p {
+            margin: 15px 0;
+            color: #444;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .note-container p:first-child {
+            margin-top: 0;
+        }
+        
+        .note-container p:last-child {
+            margin-bottom: 0;
+        }
+        @media (max-width: 1024px) {
+            .framework-container {
+                width: 80vw; /* 80% of viewport width */
+                height: 60vw; /* Maintain aspect ratio */
+                max-width: 900px;
+                max-height: 700px;
+            }
+            .company {
+                font-size: 0.7rem;
+                padding: 6px 10px;
+            }
+            .quad-info-popup {
+                width: 250px !important;
+                padding: 1rem !important;
+                font-size: 0.8rem !important;
+            }
+            .quad-info-popup h4 {
+                font-size: 1rem !important;
+            }
+            /* Keep popups on screen */
+            .quad-info-popup {
+                max-width: calc(100vw - 40px) !important;
+                left: auto !important;
+                right: 10px !important;
+            }
+            .y-axis-left {
+                left: -25px !important;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            
+            .framework-container {
+                width: 90vw;
+                height: 70vw;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .company {
+                font-size: 0.6rem;
+                padding: 4px 8px;
+            }
+            
+            .company-valuation {
+                font-size: 0.5em;
+            }
+            .quad-label .quad-info-btn,
+            .quadrant-labels .quad-label .quad-info-btn,
+            span.quad-info-btn {
+                width: 10px !important;
+                height: 10px !important;
+                font-size: 7px !important;
+                top: 2px !important;
+                right: 2px !important;
+            }
+            .quad-info-popup {
+                width: 200px !important;
+                padding: 0.8rem !important;
+                font-size: 0.75rem !important;
+                max-width: calc(100vw - 30px) !important;
+                left: auto !important;
+                right: 10px !important;
+            }
+            .quad-info-popup h4 {
+                font-size: 0.9rem !important;
+            }
+
+            .y-axis-left {
+                left: -20px !important;
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .framework-container {
+                width: 95vw;
+                height: 75vw;
+            }
+            
+            .company {
+                font-size: 0.5rem;
+                padding: 3px 6px;
+            }
+            
+            .axis-labels {
+                font-size: 0.8rem;
+            }
+
+            .quad-label .quad-info-btn,
+            .quadrant-labels .quad-label .quad-info-btn,
+            span.quad-info-btn {
+                width: 8px !important;
+                height: 8px !important;
+                font-size: 6px !important;
+                top: 1px !important;
+                right: 1px !important;
+            }
+            .quad-info-popup {
+                width: 150px !important;
+                padding: 0.6rem !important;
+                font-size: 0.7rem !important;
+                max-width: calc(100vw - 20px) !important;
+                left: auto !important;
+                right: 5px !important;
+            }
+            .quad-info-popup h4 {
+                font-size: 0.8rem !important;
+            }
+            .y-axis-left {
+            left: -15px !important;
+            font-size: 0.7rem;
+            }
+        }
+        
+
+        .list-tab-handle:hover {
+            background: #5a6fd8;
+        }
+
+        .list-header {
+            padding: 15px;
+            border-bottom: 2px solid #eee;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .list-title {
+            font-weight: 700;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        .list-subtitle {
+            font-size: 0.75rem;
+            opacity: 0.9;
+            margin: 5px 0 0 0;
+        }
+        
+        .companies-list {
+            height: calc(100% - 70px);
+            overflow-y: auto;
+            padding: 10px 0;
+        }
+
+        .company-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+            font-size: 0.8rem;
+        }
+
+        .company-list-tab {
+            position: absolute;
+            top: 100px;
+            left: -250px;  /* Most of it hidden */
+            width: 280px;
+            height: 400px;
+            border-radius: 0 15px 15px 0;
+            box-shadow: 2px 0 15px rgba(0,0,0,0.2);
+            transition: left 0.3s ease;
+            z-index: 150;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.3);  /* Change from 0.9 to 0.3 */
+            backdrop-filter: blur(3px);  /* Reduce from 5px to 3px */
+        }
+
+        .list-content {
+            padding-left: 35px;  /* Leave space for handle */
+            height: 100%;
+            overflow-y: auto;
+            padding-top: 15px;
+            padding-right: 10px;
+            background: rgba(255, 255, 255, 0.2);  /* Slightly more transparent */
+        }
+
+        .company-list-tab:hover {
+            left: 0px;  /* Slide out on hover */
+        }
+
+        .list-tab-handle {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 30px;
+            height: 100%;
+            background: #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            writing-mode: vertical-rl;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+
+        .list-tab-handle:hover {
+            background: #5a6fd8;
+        }
+        .company-item-name {
+            font-weight: 600;
+            color: #333;
+            line-height: 1.2;
+        }
+
+        .company-item-info {
+            font-size: 0.7rem;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .company-item:hover {
+            background: rgba(248, 249, 250, 0.7);  /* Add alpha to make it semi-transparent */
+            border-left-color: #667eea;
+        }
+
+        .quadrant-section {
+            margin: 15px 0 5px 0;
+            padding: 0 15px;
+            font-weight: 600;
+            color: #667eea;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .company.highlighted {
+            transform: scale(1.15) !important;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4) !important;
+            z-index: 100 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Physics-Infused AI in Science & Engineering</h1>
+            <p style="color: #666; margin: 10px 0;">Specialized Models ↕ Generalized Foundation Models × Research-Heavy ↔ Tech-Agnostic</p>
+        </div>
+        
+        <div class="framework-container" id="framework">
+            <!-- Axis Labels -->
+            <div class="axis-labels x-axis-bottom">Research-Heavy ← → Tech-Agnostic</div>
+            <div class="axis-labels y-axis-left">Specialized Models ← → Generalized Foundation Models</div>
+            
+            <!-- Grid Lines -->
+            <div class="grid-lines">
+                <div class="center-line-v"></div>
+                <div class="center-line-h"></div>
+            </div>
+            
+            <!-- Quadrant Labels -->
+        <div class="quadrant-labels">
+            <div class="quad-label quad-1">
+                Foundation Model<br>Builders
+                <span class="quad-info-btn" onclick="showQuadrantInfo('q3', event)">i</span>
+            </div>
+            <div class="quad-label quad-2">
+                Universal<br>Platforms
+                <span class="quad-info-btn" onclick="showQuadrantInfo('q4', event)">i</span>
+            </div>
+            <div class="quad-label quad-3">
+                Deep Physics<br>Solvers
+                <span class="quad-info-btn" onclick="showQuadrantInfo('q1', event)">i</span>
+            </div>
+            <div class="quad-label quad-4">
+                Domain<br>Platforms
+                <span class="quad-info-btn" onclick="showQuadrantInfo('q2', event)">i</span>
+            </div>
+        </div>
+
+        <!-- Add these popup divs right after the quadrant-labels div -->
+        <div class="quad-info-popup" id="popup-q1">
+            <h4>Deep Physics Solvers</h4>
+            <div class="popup-badge">Research-Heavy + Specialized</div>
+            <p><strong>Value:</strong> Novel algorithms for specific domains (advanced CFD, quantum chemistry) with high technical moats and premium pricing.</p>
+            <p><strong>Examples:</strong> Navier AI (CFD-only), specialized quantum chemistry startups.</p>
+        </div>
+        
+        <div class="quad-info-popup" id="popup-q2">
+            <h4>Domain Platforms</h4>
+            <div class="popup-badge">Tech-Agnostic + Specialized</div>
+            <p><strong>Value:</strong> User-friendly tools for specific physics areas, democratizing access to specialized simulation.</p>
+            <p><strong>Examples:</strong> CFD platforms, materials discovery tools.</p>
+        </div>
+        
+        <div class="quad-info-popup" id="popup-q3">
+            <h4>Foundation Model Builders</h4>
+            <div class="popup-badge">Research-Heavy + Generalized</div>
+            <p><strong>Value:</strong> Universal physics simulators and cross-domain models. Hardest to build, highest potential impact.</p>
+            <p><strong>Examples:</strong> Jua (universal physics), KronosAI (foundation models).</p>
+        </div>
+        
+        <div class="quad-info-popup" id="popup-q4">
+            <h4>Universal Platforms</h4>
+            <div class="popup-badge">Tech-Agnostic + Generalized</div>
+            <p><strong>Value:</strong> Multi-physics platforms and simulation orchestration with largest addressable market and network effects.</p>
+            <p><strong>Examples:</strong> PhysicsX, Rescale.</p>
+        </div>
+        <button class="legend-btn" onclick="showLegend()">Domain Legend</button>
+        <div class="legend-overlay" id="legendOverlay" onclick="hideLegend()"></div>
+        <div class="legend" id="legendPopup">
+            <button class="close-btn" onclick="hideLegend()">×</button>
+            <div class="legend-title">Domain Legend</div>
+            <div class="legend-item">
+                <div class="legend-color" style="border-color: #e91e63;"></div>
+                <span>Life Sciences & Biotech</span>
+                <span class="info-icon" onclick="showTooltip('LifeSciencesBiotech')">i</span>
+                <div class="info-tooltip" id="lifesciencesbiotechTooltip">
+                    <strong>Life Sciences & Biotech</strong><br>
+                    Companies focused on biology, drug discovery, medical simulation, protein folding, etc.
+                </div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="border-color: #4caf50;"></div>
+                <span>Materials & Chemistry</span>
+                <span class="info-icon" onclick="showTooltip('MaterialsChemistry')">i</span>
+                <div class="info-tooltip" id="materialschemistryTooltip">
+                    <strong>Materials & Chemistry</strong><br>
+                    Modeling, simulation, or design of materials, molecules, chemical processes.
+                </div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="border-color: #2196f3;"></div>
+                <span>Mechanical & Multiphysics</span>
+                <span class="info-icon" onclick="showTooltip('MechanicalMultiphysics')">i</span>
+                <div class="info-tooltip" id="mechanicalmultiphysicsTooltip">
+                    <strong>Mechanical & Multiphysics</strong><br>
+                    Tools for structural, thermal, fluid, and multi-physics simulation — including CAD, FEA, CFD, digital twins.
+                </div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="border-color: #ff9800;"></div>
+                <span>Manufacturing & Industrial</span>
+                <span class="info-icon" onclick="showTooltip('ManufacturingIndustrial')">i</span>
+                <div class="info-tooltip" id="manufacturingindustrialTooltip">
+                    <strong>Manufacturing & Industrial</strong><br>
+                    Covers factory automation, robotics, CAM, process optimization, predictive maintenance, and production-scale digital twins.
+                </div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="border-color: #795548;"></div>
+                <span>Electrical & Electronics</span>
+                <span class="info-icon" onclick="showTooltip('ElectricalElectronics')">i</span>
+                <div class="info-tooltip" id="electricalelectronicsTooltip">
+                    <strong>Electrical & Electronics</strong><br>
+                    PCB/EDA design, circuit simulation, firmware workflows, and hardware-software co-design tools.
+                </div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="border-color: #607d8b;"></div>
+                <span>Computing & Simulation Infra</span>
+                <span class="info-icon" onclick="showTooltip('ComputingSimulationInfra')">i</span>
+                <div class="info-tooltip" id="computingsimulationinfraTooltip">
+                    <strong>Computing & Simulation Infra</strong><br>
+                    Simulation platforms, cloud HPC, solvers, compilers, surrogate modeling infrastructure.
+                </div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="border-color: #9c27b0;"></div>
+                <span>Cross-Domain / Platform</span>
+                <span class="info-icon" onclick="showTooltip('CrossDomainPlatform')">i</span>
+                <div class="info-tooltip" id="crossdomainplatformTooltip">
+                    <strong>Cross-Domain / Platform</strong><br>
+                    General-purpose modeling tools, collaboration platforms, supply chain design tools, or companies that span multiple physical domains.
+                </div>
+            </div>
+        </div>
+        </div>
+       <!-- Company List Tab -->
+        <div class="company-list-tab" id="companyListTab">
+            <div class="list-tab-handle">List</div>
+            <div class="list-content">
+                <div style="font-weight: 600; margin-bottom: 10px; color: #667eea;">Companies</div>
+                <div id="companiesList">
+                    <!-- Companies will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+        <div class="methodology-note">
+            <div class="note-container">
+                <p><strong>Note:</strong> This landscape highlights emerging players in physics-infused AI and is not exhaustive. Some (not all) simulation giants are excluded for visual clarity and to highlight newer entrants — physics-infused AI is not a primary focus for these companies. Furthermore, non-profits like Polymathic AI, FutureHouse, and specific tools developed within larger companies — such as NVIDIA PhysicsNeMo™, are worth noting but are not included here.</p>
+                <p><strong>Scope:</strong> Companies shown focus primarily on physics-based modeling and simulation rather than LLM-based tools for document processing, literature review, or scientific and engineering communication—though some may incorporate language capabilities alongside their core physics modeling.</p>
+                <p><strong>Framework Logic:</strong> The axes reflect primary value propositions, not absolute approaches. The vertical axis distinguishes between companies building "Specialized Models" for specific domains versus "Generalized Foundation Models" that work across multiple physics areas. The horizontal axis separates "Research-Heavy" companies developing novel algorithms and deep technical moats from "Tech-Agnostic" companies focused on accessible platforms and user experience. Most companies will offer a mix of capabilities across multiple quadrants.</p>            </div>
+
+    <!-- Info Panel -->
+    <div class="info-panel" id="infoPanel">
+        <div class="info-header">
+            <div class="info-title" id="infoTitle">Company Details</div>
+            <button class="close-btn" onclick="closeInfoPanel()">×</button>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-label">Description</div>
+            <div class="info-value" id="infoDescription">Select a company to view details</div>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-label">Website</div>
+            <div class="info-value">
+                <a href="#" id="infoWebsite" class="website-link" target="_blank">-</a>
+            </div>
+        </div>
+        
+        <!-- Tech Strategy Score -->
+        <div class="info-section">
+            <div class="info-label">Tech Strategy Score (1=Research-Heavy, 10=Platform)</div>
+            <div class="score-scale">
+                <div class="scale-line">
+                    <!-- Ticks for positions 1-10 -->
+                    <div class="scale-tick" style="left: 0%;"></div>
+                    <div class="scale-tick" style="left: 11.11%;"></div>
+                    <div class="scale-tick" style="left: 22.22%;"></div>
+                    <div class="scale-tick" style="left: 33.33%;"></div>
+                    <div class="scale-tick" style="left: 44.44%;"></div>
+                    <div class="scale-tick" style="left: 55.56%;"></div>
+                    <div class="scale-tick" style="left: 66.67%;"></div>
+                    <div class="scale-tick" style="left: 77.78%;"></div>
+                    <div class="scale-tick" style="left: 88.89%;"></div>
+                    <div class="scale-tick" style="left: 100%;"></div>
+                    <!-- Indicator circle -->
+                    <div class="scale-indicator" id="techIndicator"></div>
+                </div>
+            </div>
+            <div class="scale-labels">
+                <span>Research-Heavy</span>
+                <span>Platform</span>
+            </div>
+        </div>
+
+        <!-- Focus Score -->
+        <div class="info-section">
+            <div class="info-label">Generalizability Score (1=Specialized, 10=Generalized)</div>
+            <div class="score-scale">
+                <div class="scale-line">
+                    <div class="scale-tick" style="left: 0%;"></div>
+                    <div class="scale-tick" style="left: 11.11%;"></div>
+                    <div class="scale-tick" style="left: 22.22%;"></div>
+                    <div class="scale-tick" style="left: 33.33%;"></div>
+                    <div class="scale-tick" style="left: 44.44%;"></div>
+                    <div class="scale-tick" style="left: 55.56%;"></div>
+                    <div class="scale-tick" style="left: 66.67%;"></div>
+                    <div class="scale-tick" style="left: 77.78%;"></div>
+                    <div class="scale-tick" style="left: 88.89%;"></div>
+                    <div class="scale-tick" style="left: 100%;"></div>
+                    <div class="scale-indicator" id="focusIndicator"></div>
+                </div>
+            </div>
+            <div class="scale-labels">
+                <span>Specialized</span>
+                <span>Generalized</span>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-label">Domain Tags</div>
+            <div class="domain-tags" id="infoDomains">-</div>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-label">Funding Information</div>
+            <div class="funding-grid">
+                <div class="funding-item">
+                    <div class="funding-amount" id="totalRaised">-</div>
+                    <div style="font-size: 0.8rem; color: #666;">Total Raised</div>
+                </div>
+                <div class="funding-item">
+                    <div class="funding-amount" id="lastRound">-</div>
+                    <div style="font-size: 0.8rem; color: #666;">Last Round</div>
+                </div>
+                <div class="funding-item">
+                    <div class="funding-amount" id="valuation">-</div>
+                    <div style="font-size: 0.8rem; color: #666;">Valuation</div>
+                </div>
+                <div class="funding-item">
+                    <div style="font-size: 0.9rem; color: #333;" id="investors">-</div>
+                    <div style="font-size: 0.8rem; color: #666;">Key Investors</div>
+                </div>
+            </div>      
+        </div>
+    </div>
+    </div>
+
+
+
+    <script>
+
+        const domainMap = {
+            'LSB': 'Life Sciences & Biotech',
+            'MC': 'Materials & Chemistry', 
+            'MM': 'Mechanical & Multiphysics',
+            'MI': 'Manufacturing & Industrial',
+            'EE': 'Electrical & Electronics',
+            'CSI': 'Computing & Simulation Infra',
+            'CDP': 'Cross-Domain / Platform'
+        };
+
+        // Helper function to convert short codes to full names
+        function expandDomains(shortCodes) {
+            return shortCodes.map(code => domainMap[code]);
+        }
+
+        // Helper function to convert full names to CSS classes
+        function domainToCSS(fullName) {
+            return fullName.toLowerCase()
+                .replace(/[^a-z0-9]/g, '-')
+                .replace(/-+/g, '-');
+        }
+
+        const companies = [
+{
+    name: "PhysicsX",
+    description: "AI-driven platform empowering engineers with real-time multiphysics simulations, accelerating product design, manufacturing, and operations.",
+    website: "https://physicsx.ai",
+    techScore: 6,
+    generalizabilityScore: 8, // Multi-physics platform across domains
+    domains: ['MM', 'MI', 'CSI', 'CDP'],
+    totalRaised: 170.0,
+    lastRound: 135.0,
+    valuation: 1000.0,
+    investors: ['Atomico (lead)', 'Temasek', 'Siemens', 'Applied Materials', 'July Fund', 'General Catalyst', 'NGP', 'Radius Capital', 'Standard Investments', 'Allen & Co']
+},
+{
+    name: "Neural Concept",
+    description: "Develops 3D deep learning algorithms for industrial engineering, speeding R&D cycles and transforming product design with their platform Neural Concept Shape.",
+    website: "https://neuralconcept.com",
+    techScore: 4,
+    generalizabilityScore: 6, // 3D learning across multiple engineering domains
+    domains: ['MM', 'MI', 'CDP', 'CSI'],
+    totalRaised: 15.8,
+    lastRound: 9.1,
+    valuation: null,
+    investors: ['Constantia New Business', 'Alven Capital', 'High-Tech Gründerfonds', 'Verve Ventures', 'Aster', 'CNB Capital']
+},
+{
+    name: "Godela.ai",
+    description: "AI-native physics engine offering instant, simulation-quality answers to complex engineering problems; enables engineers to query and model with CAD files or data.",
+    website: "https://godela.ai",
+    techScore: 3,
+    generalizabilityScore: 7, // Cross-domain physics engine, generalized approach
+    domains: ['MM', 'MI', 'CDP', 'CSI'],
+    totalRaised: null,
+    lastRound: null,
+    valuation: null,
+    investors: []
+},
+{
+    name: "BeyondMath",
+    description: "AI-driven simulation software for fluid dynamics, electromagnetics, and physics; delivers design assessment and optimization without prototypes, used by F1 teams.",
+    website: "https://beyondmath.com",
+    techScore: 3,
+    generalizabilityScore: 5, // Multiple physics domains but still domain-specific
+    domains: ['MM', 'MI', 'CDP'],
+    totalRaised: null,
+    lastRound: null,
+    valuation: null,
+    investors: []
+},
+{
+    name: "Adaptive Simulations",
+    description: "Provides fully automated, cloud-based flow simulations and design optimization using adaptive algorithms, making CAE accessible for all levels.",
+    website: "https://ingridcloud.com",
+    techScore: 5,
+    generalizabilityScore: 3, // Focused on flow simulations (CFD)
+    domains: ['MM', 'MI', 'CSI'],
+    totalRaised: 2.4,
+    lastRound: null,
+    valuation: null,
+    investors: ['Karma Ventures', 'Creathor Ventures', 'KTH Holding', 'European Innovation Council Fund']
+},
+{
+    name: "Navier AI",
+    description: "ML-based CFD solver delivering fluid dynamics simulations 1,000x faster than traditional tools; enables real-time engineering design iterations.",
+    website: "https://navier.ai/",
+    techScore: 2,
+    generalizabilityScore: 2, // Specialized CFD solver only
+    domains: ['MM', 'MI', 'CSI'],
+    totalRaised: 7.8,
+    lastRound: 7.8,
+    valuation: null,
+    investors: ['Serra Ventures', 'Shakti', 'E14 Fund', 'Ahren Innovation Capital']
+},
+{
+    name: "Monolith AI",
+    description: "Empowers engineers to use AI for complex physics problems, cutting product development cycle times and delivering AI-driven insights from engineering data.",
+    website: "https://https://www.monolithai.com/",
+    techScore: 4,
+    generalizabilityScore: 6, // Cross-domain physics AI platform
+    domains: ['MM', 'MI', 'CSI', 'CDP'],
+    totalRaised: 20.9,
+    lastRound: 10.3,
+    valuation: null,
+    investors: ['Insight Partners', 'Pentech Ventures', 'Touchstone Innovations', 'SuperSeed Ventures']
+},
+{
+    name: "KronosAI",
+    description: "Develops AI solutions and foundation models for accelerating and enabling high-fidelity physics and inverse design in engineering simulations.",
+    website: "https://https://kronosai.co/",
+    techScore: 2,
+    generalizabilityScore: 8, // Foundation models for physics - highly generalized
+    domains: ['CSI', 'CDP', 'MI'],
+    totalRaised: 1.5,
+    lastRound: 1.5,
+    valuation: null,
+    investors: ['Y Combinator', 'N/A']
+},
+{
+    name: "nTop",
+    description: "Advanced computational design software fusing geometry and physics, enabling rapid and validated design of complex, high-performance products.",
+    website: "https://https://www.ntop.com/",
+    techScore: 7,
+    generalizabilityScore: 5, // Computational design across domains but specialized approach
+    domains: ['MM', 'MI', 'CDP'],
+    totalRaised: 33.5,
+    lastRound: 20.0,
+    valuation: null,
+    investors: ['Insight Partners', 'Canaan', 'DCVC', 'Haystack', 'Root Ventures']
+},
+{
+    name: "HIDDEN-AI",
+    description: "HIDENN-AI creates artificial intelligence software that helps engineers and scientists design advanced materials and manufacturing systems much faster and with far less data than traditional methods.",
+    website: "https://hidennai.wordpress.com/",
+    techScore: 3,
+    generalizabilityScore: 5, // General AI security platform
+    domains: ['CSI', 'CDP'],
+    totalRaised: null,
+    lastRound: null,
+    valuation: null,
+    investors: []
+},
+{
+    name: "Orbital Materials",
+    description: "AI-powered platform for discovering materials and climate technologies, focusing on clean energy and environmental sustainability.",
+    website: "https://https://www.orbitalmaterials.com/",
+    techScore: 2,
+    generalizabilityScore: 4, // Materials discovery but focused on climate/energy
+    domains: ['MC', 'LSB', 'MI'],
+    totalRaised: 7.7,
+    lastRound: 4.3,
+    valuation: null,
+    investors: ['Breakout Ventures', 'Entreé Capital', 'Coastal Ventures']
+},
+{
+    name: "Adam CAD",
+    description: "AI-powered CAD co-pilot transforming natural language and images into parametric 3D models, streamlining engineering design workflows.",
+    website: "https://https://www.adamcad.com",
+    techScore: 6,
+    generalizabilityScore: 6, // General CAD tool across engineering domains
+    domains: ['MM', 'MI', 'CSI'],
+    totalRaised: null,
+    lastRound: null,
+    valuation: null,
+    investors: []
+},
+{
+    name: "Jua",
+    description: "Building a universal physics simulator—uses deep learning and weather modeling for applications like energy trading and environmental forecasting.",
+    website: "https://https://www.jua.ai",
+    techScore: 3,
+    generalizabilityScore: 9, // Explicitly "universal physics simulator"
+    domains: ['MM', 'MC', 'LSB', 'CDP'],
+    totalRaised: 6.0,
+    lastRound: 6.0,
+    valuation: null,
+    investors: ['Y Combinator', 'Harvard Innovation Labs']
+},
+{
+    name: "Digilab Solutions",
+    description: "Provides Office 365, Azure, and Microsoft-based consulting, development, and project management services, with international expertise.",
+    website: "https://https://www.digilab.co.uk",
+    techScore: 9,
+    generalizabilityScore: 8, // General enterprise platform
+    domains: ['CSI', 'CDP'],
+    totalRaised: null,
+    lastRound: null,
+    valuation: null,
+    investors: []
+},
+{
+    name: "Rescale",
+    description: "Delivers high-performance computing as-a-service, simplifying complex simulation and optimization for engineering and scientific R&D.",
+    website: "https://www.rescale.com",
+    techScore: 8,
+    generalizabilityScore: 9, // HPC platform for all simulation types
+    domains: ['CSI', 'CDP', 'MI'],
+    totalRaised: null,
+    lastRound: 100.0,
+    valuation: 1300.0,
+    investors: ['T. Rowe Price', 'Bessemer Venture Partners', 'DENSO', 'Founders Fund']
+},
+{
+    name: "Algoryx Simulation",
+    description: "Pioneers high-fidelity physics simulation; AGX Dynamics enables machine autonomy, digital twins, and real-time physics for a wide range of industries.",
+    website: "https://https://www.algoryx.se",
+    techScore: 3,
+    generalizabilityScore: 6, // Real-time physics across industries
+    domains: ['MM', 'MI', 'CSI'],
+    totalRaised: null,
+    lastRound: null,
+    valuation: null,
+    investors: ['Inven Capital', 'Almi Invest', 'Industrifonden']
+},
+{
+    name: "DeepSim, Inc.",
+    description: "AI-driven multi-scale physics simulations platform offering rapid, scalable solutions for engineering design using custom GPU-accelerated pipelines.",
+    website: "https://https://www.deepsim.io",
+    techScore: 3,
+    generalizabilityScore: 7, // Multi-scale physics platform
+    domains: ['MM', 'CSI', 'MI'],
+    totalRaised: null,
+    lastRound: null,
+    valuation: null,
+    investors: []
+},
+{
+    name: "Siml.ai (DimensionLab)",
+    description: "Software platform for AI-based numerical simulation, enabling easy creation, training, and deployment of high-performance physics simulators.",
+    website: "https://https://dimensionlab.org/products/simlai",
+    techScore: 5,
+    generalizabilityScore: 8, // Platform for creating physics simulators across domains
+    domains: ['MM', 'CSI', 'CDP'],
+    totalRaised: null,
+    lastRound: null,
+    valuation: null,
+    investors: []
+},
+{
+    name: "Akselos",
+    description: "Provides Structural Performance Management software using advanced physics-based simulations for real-time digital twins and asset management.",
+    website: "https://https://www.akselos.com",
+    techScore: 5,
+    generalizabilityScore: 3, // Specialized in structural simulation
+    domains: ['MM', 'MI', 'CSI'],
+    totalRaised: 106.0,
+    lastRound: 75.0,
+    valuation: null,
+    investors: ['Temasek', 'Digital Colony', 'Allianz X']
+},
+{
+    name: "Kuano",
+    description: "Uses AI and quantum computing to create molecular design solutions, accelerating drug and enzyme inhibitor discovery.",
+    website: "https://https://www.kuano.ai",
+    techScore: 3,
+    generalizabilityScore: 4, // Molecular design for drug discovery - specialized domain
+    domains: ['MC', 'LSB', 'CSI'],
+    totalRaised: 3.6,
+    lastRound: 3.6,
+    valuation: null,
+    investors: ['Inventure', 'Superhero Capital']
+},
+{
+    name: "Physna",
+    description: "SaaS platform leveraging geometric search and 3D AI to unlock the value of 3D models for manufacturing, AR/VR, and digital asset management.",
+    website: "https://physna.com",
+    techScore: 6,
+    generalizabilityScore: 7, // 3D AI platform across multiple use cases
+    domains: ['MM', 'CDP', 'MI'],
+    totalRaised: 85.0,
+    lastRound: null,
+    valuation: 336.0,
+    investors: ['Tiger Global Management', 'Sequoia Capital', 'GV (Google Ventures)', 'Drive Capital', 'Next Play Ventures']
+},
+{
+    name: "Lila Sciences",
+    description: "Scientific superintelligence platform with autonomous labs, applying AI to entirely automate and scale experimentation in life, chemical, and materials sciences.",
+    website: "https://lila.ai",
+    techScore: 2,
+    generalizabilityScore: 7, // Cross-domain scientific experimentation platform
+    domains: ['LSB', 'MC', 'CDP'],
+    totalRaised: null,
+    lastRound: 200.0,
+    valuation: null,
+    investors: ['Flagship Pioneering (lead)', 'General Catalyst', 'March Capital', 'ARK Venture Fund', 'others']
+},
+{
+    name: "Covariant",
+    description: "Builds universal AI enabling robots to perceive, reason, and handle objects autonomously—applied in industries needing automated manipulation and logistics.",
+    website: "https://covariant.ai",
+    techScore: 7,
+    generalizabilityScore: 8, // Universal AI for robotics across industries
+    domains: ['MI', 'EE', 'CDP'],
+    totalRaised: null,
+    lastRound: 150.0,
+    valuation: 1200.0,
+    investors: ['Tiger Global', 'Bessemer Venture Partners', 'Founders Fund', 'DFJ Growth']
+},
+{
+    name: "Geminus AI",
+    description: "Provides real-time intelligence and digital twins for industrial systems—integrates physics, data, and computation to optimize large-scale operations.",
+    website: "https://geminus.ai",
+    techScore: 5,
+    generalizabilityScore: 6, // Digital twins across industrial systems
+    domains: ['MI', 'MM', 'CSI', 'CDP'],
+    totalRaised: null,
+    lastRound: null,
+    valuation: null,
+    investors: []
+},
+{
+    name: "Rahko",
+    description: "Quantum machine learning company developing advanced modeling for drug and material discovery, acquired by Odyssey Therapeutics.",
+    website: "https://rahko.ai",
+    techScore: 2,
+    generalizabilityScore: 5, // Quantum ML for drugs and materials - moderate generalization
+    domains: ['MC', 'LSB', 'CSI'],
+    totalRaised: 19.0,
+    lastRound: null,
+    valuation: null,
+    investors: ['IQ Capital', 'Parkwalk Advisors', 'Amadeus Capital Partners']
+},
+{
+    name: "Optineura AI",
+    description: "Speeds up hardware development by using ML simulation surrogates to reduce CAE simulation time from hours to seconds, supporting diverse data formats.",
+    website: "https://https://www.optineura.com/",
+    techScore: 3,
+    generalizabilityScore: 5, // CAE surrogates across hardware domains
+    domains: ['MM', 'MI', 'CSI'],
+    totalRaised: 4.0,
+    lastRound: 4.0,
+    valuation: null,
+    investors: ['R42 Group', 'Bioinformatics Ventures']
+},
+{
+    name: "Camber / CamberCloud",
+    description: "Scientific computing cloud platform offering scalable APIs and containerized HPC/AI workflows for rapid research and simulation deployment.",
+    website: "https://https://www.cambercloud.com/",
+    techScore: 8,
+    generalizabilityScore: 9, // General scientific computing platform
+    domains: ['CSI', 'CDP'],
+    totalRaised: null,
+    lastRound: null,
+    valuation: null,
+    investors: []
+},
+{
+    name: "Emmi AI",
+    description: "AI-driven platform accelerating industrial simulations, combining deep learning and domain expertise to rapidly solve previously intractable physics problems.",
+    website: "https://https://www.emmi.ai/",
+    techScore: 4,
+    generalizabilityScore: 6, // Industrial simulations across domains
+    domains: ['MM', 'MI', 'CSI'],
+    totalRaised: null,
+    lastRound: null,
+    valuation: null,
+    investors: []
+},
+{
+    name: "Rowan Scientific Corp.",
+    description: "Develops computational tools to accelerate chemical R&D with simulation and molecular design platforms for scientists.",
+    website: "https://https://www.rowansci.com/",
+    techScore: 4,
+    generalizabilityScore: 3, // Specialized in chemical R&D
+    domains: ['MC', 'LSB', 'CSI'],
+    totalRaised: null,
+    lastRound: null,
+    valuation: null,
+    investors: []
+},
+{
+    name: "Vsim",
+    description: "Multi-physics simulation engine using advanced ML models for real-time, scalable and accurate simulations across AI, robotics, and VFX industries.",
+    website: "https://https://www.vsim.foundation/",
+    techScore: 3,
+    generalizabilityScore: 7, // Multi-physics across diverse industries
+    domains: ['EE', 'MM', 'CSI'],
+    totalRaised: null,
+    lastRound: null,
+    valuation: null,
+    investors: []
+},
+{
+    name: "Synopsys",
+    description: "Global leader in electronic design automation (EDA) and semiconductor IP, providing tools and IP for IC/SoC design, security, and AI chip development.",
+    website: "https://https://www.synopsys.com",
+    techScore: 9,
+    generalizabilityScore: 4, // Specialized in semiconductor/EDA domain
+    domains: ['EE', 'CSI', 'CDP'],
+    totalRaised: null,
+    lastRound: null,
+    valuation: 91920,
+    investors: ['Institutional investors', 'mutual funds']
+},
+{
+    name: "Dassault Systèmes",
+    description: "French software giant specializing in 3D design, digital mock-up, and product lifecycle management (PLM) solutions for diverse industries.",
+    website: "https://https://www.3ds.com",
+    techScore: 9,
+    generalizabilityScore: 9, // PLM platform across all industries
+    domains: ['CDP', 'MM', 'MI', 'MC', 'CSI', 'EE', 'LSB'],
+    totalRaised: null,
+    lastRound: null,
+    valuation: 49000,
+    investors: ['Institutional', 'French government']
+},
+{
+    name: "Siemens Digital Industries",
+    description: "Offers 2D/3D PLM software and industrial automation tools for engineering, manufacturing, and digitalization, headquartered in Plano, Texas.",
+    website: "https://https://www.sw.siemens.com/en-US/",
+    techScore: 8,
+    generalizabilityScore: 8, // Industrial platform across domains
+    domains: ['MI', 'MM', 'CSI', 'EE', 'CDP', 'MC', 'LSB'],
+    totalRaised: null,
+    lastRound: null,
+    valuation: 206000,
+    investors: ['Owned by Siemens AG (public)']
+},
+{
+    name: "Altair Engineering Inc",
+    description: "Delivers software and cloud solutions for simulation, HPC, data analytics, and AI, optimizing design and innovation across industries.",
+    website: "https://https://www.altair.com",
+    techScore: 8,
+    generalizabilityScore: 8, // Multi-domain simulation platform
+    domains: ['MM', 'MI', 'CSI', 'EE', 'CDP'],
+    totalRaised: null,
+    lastRound: null,
+    valuation: 9630,
+    investors: ['Institutional', 'mutual funds; merger in progress']
+},
+{
+    name: "Autodesk",
+    description: "Global software corporation known for AutoCAD and Revit, serving architecture, engineering, construction, and manufacturing with 3D design and modeling tools.",
+    website: "https://https://www.autodesk.com",
+    techScore: 9,
+    generalizabilityScore: 7, // Design tools across multiple domains
+    domains: ['MM', 'MI', 'CSI', 'CDP'],
+    totalRaised: null,
+    lastRound: null,
+    valuation: 65000,
+    investors: ['Institutional investors']
+},
+{
+    name: "Diode Computers",
+    description: "AI-driven PCB design platform that generates PCB layouts from code to dramatically speed up board creation.",
+    website: "https://www.diode.computer",
+    techScore: 7,
+    generalizabilityScore: 2, // Specialized PCB design only
+    domains: ["EE", "CDP"],
+    totalRaised: 14.0,
+    lastRound: 11.4,
+    valuation: null,
+    investors: ["Andreessen Horowitz", "Caffeinated Capital", "BoxGroup", "Y Combinator", "Soma Capital", "Vento"]
+},
+{
+    name: "COMSOL",
+    description: "Developer of COMSOL Multiphysics®, finite-element modeling software for engineering, enabling multiphysics simulation and easy creation of simulation apps",
+    website: "https://https://www.comsol.com",
+    techScore: 7,
+    generalizabilityScore: 7, // Multiphysics platform across domains
+    domains: ['MM', 'MC', 'CSI', 'CDP'],
+    totalRaised: null,
+    lastRound: null,
+    valuation: null,
+    investors: []
+},
+{
+  name: "Dunia Innovations",
+  description: "Berlin-based deep tech startup using proprietary AI and a self-driving lab to accelerate electrocatalyst discovery for green hydrogen and CO2 conversion. Tackles bottlenecks in scalable carbon utilization for the energy transition.",
+  website: "https://dunia.ai",
+  techScore: 8,
+  generalizabilityScore: 5, // Focused on clean energy catalysis, but platform has potential for broader material discovery
+  domains: ['MC', 'CDP'],
+  totalRaised: 11.5,
+  lastRound: "Early VC",
+  valuation: 69,
+  investors: [
+    "Elaia",
+    "Redalpine",
+    "European Innovation Council (EIC)",
+    "Pace Ventures",
+    "Kindred Capital",
+    "Deep Science Ventures",
+    "Anglo American",
+    "Industry expert angels"
+  ]
+},
+{
+  name: "Arena AI",
+  description: "Developer of Atlas, an AI-native platform combining generative AI with physics-based modeling to automate hardware design, testing, and debugging for industries like semiconductors, robotics, and aerospace.",
+  website: "https://arena-ai.com/",
+  techScore: 8,
+  generalizabilityScore: 7, // Broad hardware engineering use cases across multiple industries
+  domains: ['CSI', 'MI', 'EE'],
+  totalRaised: 30.0,
+  lastRound: "Series A (2024)",
+  valuation: null,
+  investors: [
+    "Founders Fund",
+    "Pear VC",
+    "First Round Capital",
+    "SV Angel",
+    "Index Ventures",
+    "angel investors"
+  ]
+}
+        ];
+
+        let originalPositions = new Map();
+
+
+        function initializeCompanies() {
+            const framework = document.getElementById('framework');
+    
+            const valuations = companies.map(c => c.valuation).filter(v => v > 0);
+            const minValuation = Math.min(...valuations);
+            const maxValuation = Math.max(...valuations);
+            
+            companies.forEach((company, index) => {
+                // Move the domain expansion INSIDE the loop for each company:
+                const fullDomains = expandDomains(company.domains);
+                const firstDomainCSS = domainToCSS(fullDomains[0]);
+
+                
+                const companyElement = document.createElement('div');
+                companyElement.className = 'company domain-' + firstDomainCSS;
+
+                console.log('Element classes:', companyElement.className); // DEBUG
+
+                companyElement.style.cursor = 'pointer';
+                companyElement.setAttribute('data-company', company.name); // Add this line
+                
+                // Format valuation
+                let valuationText = '';
+                if (company.valuation >= 1000) {
+                    valuationText = '$' + (company.valuation / 1000).toFixed(1) + 'B';
+                } else if (company.valuation > 0) {
+                    valuationText = '$' + company.valuation + 'M';
+                } else {
+                    valuationText = 'Private';
+                }
+                
+                // Create name and valuation elements
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'company-name';
+                nameDiv.textContent = company.name;
+                
+                const valuationDiv = document.createElement('div');
+                valuationDiv.className = 'company-valuation';
+                valuationDiv.textContent = valuationText;
+                
+                companyElement.appendChild(nameDiv);
+                companyElement.appendChild(valuationDiv);
+                
+                // Size based on valuation
+                let size = 45;
+                if (company.valuation > 0) {
+                    const logMin = Math.log(minValuation);
+                    const logMax = Math.log(maxValuation);
+                    const logVal = Math.log(company.valuation);
+                    size = 30 + ((logVal - logMin) / (logMax - logMin)) * 60;
+                }
+                
+                companyElement.style.width = size + 'px';
+                companyElement.style.height = size + 'px';
+                companyElement.style.fontSize = Math.max(0.6, Math.min(0.9, size / 80)) + 'rem';
+
+                // Store size in company object for positionCompany function
+                company.size = size;
+
+                // Replace the ideal positioning with slight jitter:
+                const idealX = ((company.techScore - 1) / 9) * (900 - 100) + 50;
+                const idealY = ((10 - company.generalizabilityScore) / 9) * (700 - 100) + 50;
+
+                // Add small random offset (±15px) to break up overlaps
+                // Add deterministic offset based on company name
+                // Create meaningful jitter based on secondary characteristics
+                function getAxisCorrelatedOffset(company, axis, range) {
+                    let seed = 0;
+                    
+                    if (axis === 'x') {
+                        // X-axis jitter based on funding stage/maturity
+                        // Early stage companies (less funding) jitter left, mature companies jitter right
+                        const funding = company.totalRaised || 0;
+                        seed = funding > 50 ? 1 : funding > 10 ? 0 : -1;
+                        
+                        // Add some company-specific variation
+                        let hash = 0;
+                        for (let i = 0; i < company.name.length; i++) {
+                            hash = ((hash << 5) - hash) + company.name.charCodeAt(i);
+                        }
+                        seed += (hash % 3 - 1) * 0.3; // Small random component
+                        
+                    } else { // y-axis
+                        // Y-axis jitter based on domain diversity
+                        // Single domain companies jitter down, multi-domain jitter up
+                        const domainCount = company.domains.length;
+                        seed = domainCount > 3 ? 1 : domainCount > 2 ? 0 : -1;
+                        
+                        // Add valuation influence
+                        if (company.valuation > 1000) seed += 0.5; // Billion+ companies trend up
+                        
+                        // Add some company-specific variation
+                        let hash = 0;
+                        for (let i = 0; i < company.name.length; i++) {
+                            hash = ((hash << 5) - hash) + company.name.charCodeAt(i);
+                        }
+                        seed += (hash % 3 - 1) * 0.3;
+                    }
+                    
+                    // Normalize and scale
+                    return Math.max(-1, Math.min(1, seed)) * range * 0.5;
+                }
+
+                const jitterX = getAxisCorrelatedOffset(company, 'x', 100);
+                const jitterY = getAxisCorrelatedOffset(company, 'y', 60);
+
+                companyElement.style.left = (idealX + jitterX - size / 2) + 'px';
+                companyElement.style.top = (idealY + jitterY - size / 2) + 'px';
+
+                originalPositions.set(company.name, {
+                    x: idealX + jitterX - size / 2,
+                    y: idealY + jitterY - size / 2,
+                    size: size
+                });
+
+                
+                companyElement.addEventListener('click', function() {
+                    showCompanyInfo(company);
+                    
+                }); 
+                
+                framework.appendChild(companyElement);
+            
+            });
+
+        }
+        
+        
+        function adjustPositionsForCollisions() {
+            const positions = getCompanyPositions();
+            const maxIterations = 100;
+            const dampingFactor = 0.3;
+            const minSeparation = 5; // Minimum gap between companies
+            
+            for (let iteration = 0; iteration < maxIterations; iteration++) {
+                let hasCollisions = false;
+                
+                // Apply separation forces
+                positions.forEach((pos1, i) => {
+                    let fx = 0, fy = 0;
+                    
+                    positions.forEach((pos2, j) => {
+                        if (i === j) return;
+                        
+                        const dx = pos1.x - pos2.x;
+                        const dy = pos1.y - pos2.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        const minDistance = (pos1.size + pos2.size) / 2 + minSeparation;
+                        
+                        if (distance < minDistance && distance > 0.1) {
+                            hasCollisions = true;
+                            const overlap = minDistance - distance;
+                            const force = overlap / distance * 2; // Stronger force
+                            fx += (dx / distance) * force;
+                            fy += (dy / distance) * force;
+                        }
+                    });
+                    
+                    // Apply movement with damping
+                    pos1.x += fx * dampingFactor;
+                    pos1.y += fy * dampingFactor;
+                    
+                    // Keep within bounds with padding
+                    const padding = pos1.size / 2 + 5;
+                    pos1.x = Math.max(padding, Math.min(900 - padding, pos1.x));
+                    pos1.y = Math.max(padding, Math.min(700 - padding, pos1.y));
+                });
+                
+                // Early termination if no collisions
+                if (!hasCollisions) break;
+            }
+            
+            applyPositions(positions);
+        }
+
+        function positionCompany(company, existingPositions) {
+            const idealX = ((company.techScore - 1) / 9) * (900 - 100) + 50;
+            const idealY = ((10 - company.generalizabilityScore) / 9) * (700 - 100) + 50;
+            
+            // Try ideal position first
+            if (!hasCollision(idealX, idealY, company.size, existingPositions)) {
+                return { x: idealX, y: idealY };
+            }
+            
+            // Spiral outward from ideal position
+            for (let radius = 20; radius <= 100; radius += 15) {
+                for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 8) {
+                    const x = idealX + Math.cos(angle) * radius;
+                    const y = idealY + Math.sin(angle) * radius;
+                    
+                    if (x >= 0 && x <= 900 && y >= 0 && y <= 700 &&
+                        !hasCollision(x, y, company.size, existingPositions)) {
+                        return { x, y };
+                    }
+                }
+            }
+            
+            return { x: idealX, y: idealY }; // Fallback
+
+            
+        }
+
+        function showCompanyInfo(company) {
+            console.log('showCompanyInfo called for:', company.name);
+            const panel = document.getElementById('infoPanel');
+            console.log('Panel element:', panel);
+            
+            if (!panel) {
+                console.error('Info panel not found!');
+                return;
+            }
+            
+            document.getElementById('infoTitle').textContent = company.name;
+            document.getElementById('infoDescription').textContent = company.description;
+            document.getElementById('infoWebsite').href = company.website;
+            document.getElementById('infoWebsite').textContent = company.website;
+            
+            
+            const techPosition = ((company.techScore - 1) / 9) * 100;
+            const focusPosition = ((company.generalizabilityScore - 1) / 9) * 100;
+
+            // Account for circle width (8px radius = 50% of 16px width)
+            document.getElementById('techIndicator').style.left = `calc(${techPosition}% - 8px)`;
+            document.getElementById('focusIndicator').style.left = `calc(${focusPosition}% - 8px)`;
+            // NEW domain handling - replace the old section entirely:
+            const fullDomains = expandDomains(company.domains);
+            const domainsContainer = document.getElementById('infoDomains');
+            domainsContainer.innerHTML = '';
+            fullDomains.forEach(domain => {
+                const tag = document.createElement('span');
+                const cssClass = domainToCSS(domain);
+                tag.className = 'domain-tag tag-' + cssClass;
+                tag.textContent = domain; // Shows full name in UI
+                domainsContainer.appendChild(tag);
+            });
+            
+            if (company.valuation >= 1000) {
+                document.getElementById('valuation').textContent = '$' + (company.valuation / 1000).toFixed(1) + 'B';
+            } else {
+                document.getElementById('valuation').textContent = '$' + company.valuation + 'M';
+            }
+            
+            document.getElementById('totalRaised').textContent = '$' + company.totalRaised + 'M';
+            document.getElementById('lastRound').textContent = '$' + company.lastRound + 'M';
+            const investorsText = company.investors ? company.investors.join(', ') : 'Not disclosed';
+            document.getElementById('investors').textContent = investorsText;
+            
+            panel.classList.add('visible');
+            console.log('Added visible class to panel. Panel classes:', panel.className);
+        }
+
+        function closeInfoPanel() {
+            document.getElementById('infoPanel').classList.remove('visible');
+        }
+
+        function showLegend() {
+            const legend = document.getElementById('legendPopup');
+            const legendBtn = document.querySelector('.legend-btn');
+            
+            // Show the legend but KEEP the button visible
+            legend.classList.add('visible');
+            // Remove this line: legendBtn.style.display = 'none';
+        }
+
+        function hideLegend() {
+            const legend = document.getElementById('legendPopup');
+            const legendBtn = document.querySelector('.legend-btn');
+            
+            // Hide the legend and show the button
+            legend.classList.remove('visible');
+            legendBtn.style.display = 'block';
+        }
+
+        function showTooltip(domain) {
+        // Hide all other tooltips first
+        document.querySelectorAll('.info-tooltip').forEach(tooltip => {
+            tooltip.classList.remove('visible');
+        });
+        
+        // Show the clicked tooltip
+        const tooltip = document.getElementById(`${domain.toLowerCase()}Tooltip`);
+        if (tooltip) {
+            tooltip.classList.add('visible');
+        }
+        }
+
+        // 2. Add event listeners to hide tooltips when clicking elsewhere (add this to your existing DOMContentLoaded section):
+        document.addEventListener('click', function(e) {
+            // Hide tooltips when clicking outside
+            if (!e.target.closest('.info-icon') && !e.target.closest('.info-tooltip')) {
+                document.querySelectorAll('.info-tooltip').forEach(tooltip => {
+                    tooltip.classList.remove('visible');
+                });
+            }
+            
+            // Existing panel close functionality
+            if (!e.target.closest('.info-panel') && !e.target.closest('.company') && !e.target.closest('.company-item')) {
+                closeInfoPanel();
+            }
+        });
+
+        function hideTooltip(domain) {
+            const tooltip = document.getElementById(`${domain.toLowerCase()}Tooltip`);
+            tooltip.classList.remove('visible');
+        }
+
+                
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.info-panel') && !e.target.closest('.company') && !e.target.closest('.company-item')) {
+                closeInfoPanel();
+            }
+        });
+
+
+        function showQuadrantInfo(quadrant, event) {
+            event.stopPropagation(); // Prevent event bubbling
+            
+            // Hide all popups first
+            document.querySelectorAll('.quad-info-popup').forEach(popup => {
+                popup.classList.remove('visible');
+            });
+            
+            const popup = document.getElementById(`popup-${quadrant}`);
+            if (popup) {
+                // Position popup near the clicked button
+                const button = event.target;
+                const buttonRect = button.getBoundingClientRect();
+                const frameworkRect = document.getElementById('framework').getBoundingClientRect();
+                
+                // Calculate position relative to framework container
+                let left = buttonRect.left - frameworkRect.left + 25;
+                let top = buttonRect.top - frameworkRect.top;
+                
+                // Adjust if popup would go off screen
+                if (left + 300 > 900) left = left - 325; // Move left if too far right
+                if (top + 200 > 700) top = top - 150; // Move up if too far down
+                
+                popup.style.left = left + 'px';
+                popup.style.top = top + 'px';
+                popup.classList.add('visible');
+            }
+        }
+
+        function updateCompanyPositions() {
+            // Only scale the sizes and current positions, don't recalculate ideal positions
+            const framework = document.getElementById('framework');
+            const containerWidth = framework.offsetWidth;
+            const containerHeight = framework.offsetHeight;
+            const scaleFactor = Math.min(containerWidth / 900, containerHeight / 700);
+            
+            companies.forEach(company => {
+                const companyElement = document.querySelector(`[data-company="${company.name}"]`);
+                if (companyElement) {
+                    // Get CURRENT position, don't recalculate ideal position
+                    const currentLeft = parseFloat(companyElement.style.left);
+                    const currentTop = parseFloat(companyElement.style.top);
+                    
+                    // Just scale the size
+                    const currentSize = parseFloat(companyElement.style.width);
+                    const scaledSize = currentSize * scaleFactor;
+                    
+                    companyElement.style.width = scaledSize + 'px';
+                    companyElement.style.height = scaledSize + 'px';
+                    companyElement.style.fontSize = Math.max(0.4, Math.min(0.9, scaledSize / 80)) + 'rem';
+                    
+                    // Scale the current position instead of recalculating
+                    companyElement.style.left = (currentLeft * scaleFactor) + 'px';
+                    companyElement.style.top = (currentTop * scaleFactor) + 'px';
+                }
+            });
+        }
+        function getCompanyPositions() {
+            const companyElements = document.querySelectorAll('.company');
+            const positions = [];
+            
+            companyElements.forEach((element, index) => {
+                const size = parseFloat(element.style.width);
+                positions.push({
+                    element: element,
+                    x: parseFloat(element.style.left) + size/2,
+                    y: parseFloat(element.style.top) + size/2,
+                    size: size,
+                    index: index
+                });
+            });
+            
+            return positions;
+        }
+
+        function applyPositions(positions) {
+            positions.forEach(pos => {
+                pos.element.style.left = (pos.x - pos.size/2) + 'px';
+                pos.element.style.top = (pos.y - pos.size/2) + 'px';
+            });
+        }
+
+        // Replace the hasCollision function with this:
+        function hasCollision(x, y, size, existingPositions) {
+            const padding = 15; // Minimum gap between circles
+            return existingPositions.some(pos => {
+                const dx = x - pos.x;
+                const dy = y - pos.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const minDistance = (size + pos.size) / 2 + padding;
+                return distance < minDistance;
+            });
+        }
+
+        function toggleCompanyList() {
+            const tab = document.getElementById('companyListTab');
+            tab.classList.toggle('visible');
+        }
+
+        function populateCompanyList() {
+            // Group companies by quadrants
+            const quadrants = {
+                'Foundation Model Builders': [], // Research-Heavy + Generalized
+                'Universal Platforms': [],       // Tech-Agnostic + Generalized  
+                'Deep Physics Solvers': [],      // Research-Heavy + Specialized
+                'Domain Platforms': []           // Tech-Agnostic + Specialized
+            };
+            
+            companies.forEach(company => {
+                let quadrant;
+                if (company.techScore < 5 && company.generalizabilityScore >= 5) {
+                    quadrant = 'Foundation Model Builders';
+                } else if (company.techScore >= 5 && company.generalizabilityScore >= 5) {
+                    quadrant = 'Universal Platforms';
+                } else if (company.techScore < 5 && company.generalizabilityScore < 5) {
+                    quadrant = 'Deep Physics Solvers';
+                } else {
+                    quadrant = 'Domain Platforms';
+                }
+                quadrants[quadrant].push(company);
+            });
+            
+            // Sort companies within each quadrant by valuation (desc) then name
+            Object.keys(quadrants).forEach(key => {
+                quadrants[key].sort((a, b) => {
+                    const valA = a.valuation || 0;
+                    const valB = b.valuation || 0;
+                    if (valB !== valA) return valB - valA;
+                    return a.name.localeCompare(b.name);
+                });
+            });
+            
+            // Populate the list
+            const listContainer = document.getElementById('companiesList');
+            listContainer.innerHTML = '';
+            
+            Object.entries(quadrants).forEach(([quadrantName, companiesInQuad]) => {
+                if (companiesInQuad.length === 0) return;
+                
+                // Add quadrant header
+                const sectionHeader = document.createElement('div');
+                sectionHeader.className = 'quadrant-section';
+                sectionHeader.textContent = quadrantName;
+                listContainer.appendChild(sectionHeader);
+                
+                // Add companies
+                companiesInQuad.forEach(company => {
+                    const item = document.createElement('div');
+                    item.className = 'company-item';
+                    
+                    const valuation = company.valuation >= 1000 ? 
+                        `$${(company.valuation / 1000).toFixed(1)}B` : 
+                        company.valuation > 0 ? `$${company.valuation}M` : 'Private';
+                    
+                    item.innerHTML = `
+                        <div class="company-item-name">${company.name}</div>
+                        <div class="company-item-info">${valuation} • ${company.domains.length} domain${company.domains.length > 1 ? 's' : ''}</div>
+                    `;
+                    
+                    // Add hover effects
+                    item.addEventListener('mouseenter', () => {
+                        const companyElement = document.querySelector(`[data-company="${company.name}"]`);
+                        if (companyElement) {
+                            companyElement.style.transform = 'scale(1.05)';
+                            companyElement.style.boxShadow = '0 6px 20px rgba(0,0,0,0.25)';
+                            companyElement.style.zIndex = '20';
+                        }
+                    });
+
+                    item.addEventListener('mouseleave', () => {
+                        const companyElement = document.querySelector(`[data-company="${company.name}"]`);
+                        if (companyElement) {
+                            companyElement.style.transform = '';
+                            companyElement.style.boxShadow = '';
+                            companyElement.style.zIndex = '';
+                        }
+                    });
+                    
+                    // Add click handler to show company info
+                    item.addEventListener('click', () => {
+                        console.log('Company clicked:', company.name);
+                        showCompanyInfo(company);
+                    });
+                    
+                    listContainer.appendChild(item);
+                });
+            });
+        }
+        
+        // Function to notify parent about companies data
+        function sendCompaniesDataToParent() {
+            const companiesData = companies.map(company => ({
+                name: company.name,
+                description: company.description,
+                domains: expandDomains(company.domains),
+                valuation: company.valuation,
+                totalRaised: company.totalRaised,
+                quadrant: getCompanyQuadrant(company)
+            }));
+            
+            window.parent.postMessage({
+                type: 'COMPANIES_DATA',
+                data: companiesData
+            }, '*');
+        }
+
+        // Function to determine quadrant for a company
+        function getCompanyQuadrant(company) {
+            if (company.techScore < 5 && company.generalizabilityScore >= 5) {
+                return 'Foundation Model Builders';
+            } else if (company.techScore >= 5 && company.generalizabilityScore >= 5) {
+                return 'Universal Platforms';
+            } else if (company.techScore < 5 && company.generalizabilityScore < 5) {
+                return 'Deep Physics Solvers';
+            } else {
+                return 'Domain Platforms';
+            }
+        }
+
+        // Send data when iframe loads
+        window.addEventListener('load', function() {
+            sendCompaniesDataToParent();
+        });
+
+        // Optional: Remove the original tab from landscape.html
+        // Hide the original tab since parent will handle it
+        document.addEventListener('DOMContentLoaded', function() {
+            const originalTab = document.getElementById('companyListTab');
+            if (originalTab && window.parent !== window) {
+                originalTab.style.display = 'none';
+            }
+        });
+
+        window.addEventListener('resize', function() {
+            setTimeout(() => {
+                const framework = document.getElementById('framework');
+                const containerWidth = framework.offsetWidth;
+                const containerHeight = framework.offsetHeight;
+                const scaleX = containerWidth / 900;
+                const scaleY = containerHeight / 700;
+                const scaleFactor = Math.min(scaleX, scaleY);
+                
+                // Scale from ORIGINAL positions, not current positions
+                companies.forEach(company => {
+                    const el = document.querySelector(`[data-company="${company.name}"]`);
+                    const original = originalPositions.get(company.name);
+                    
+                    if (el && original) {
+                        // Scale from original position
+                        el.style.left = (original.x * scaleFactor) + 'px';
+                        el.style.top = (original.y * scaleFactor) + 'px';
+                        el.style.width = (original.size * scaleFactor) + 'px';
+                        el.style.height = (original.size * scaleFactor) + 'px';
+                        el.style.fontSize = Math.max(0.4, Math.min(0.9, (original.size * scaleFactor) / 80)) + 'rem';
+                    }
+                });
+            }, 100);
+        });
+
+        // Listen for highlight messages from parent
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'HIGHLIGHT_COMPANY') {
+            const companyName = event.data.companyName;
+            const companyElement = document.querySelector(`[data-company="${companyName}"]`);
+            if (companyElement) {
+                // Remove previous highlights
+                document.querySelectorAll('.company.highlighted').forEach(el => {
+                    el.classList.remove('highlighted');
+                });
+                
+                // Highlight the selected company
+                companyElement.classList.add('highlighted');
+                
+                // Only show company info if this is a click action, not hover
+                if (event.data.showInfo) {
+                    const company = companies.find(c => c.name === companyName);
+                    if (company) {
+                        showCompanyInfo(company);
+                    }
+                }
+            }
+        } else if (event.data.type === 'REMOVE_HIGHLIGHT') {
+                // Remove all highlights
+                document.querySelectorAll('.company.highlighted').forEach(el => {
+                    el.classList.remove('highlighted');
+                });
+            }
+        });
+
+        // Hide popup when clicking elsewhere
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.quad-info-popup') && !e.target.closest('.quad-info-btn')) {
+                document.querySelectorAll('.quad-info-popup').forEach(popup => {
+                    popup.classList.remove('visible');
+                });
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+                initializeCompanies();
+                populateCompanyList(); // Add this line
+                setTimeout(() => {
+                    updateCompanyPositions(); // Keep this for responsive scaling
+                }, 200);
+            });
+
+    </script>
+</body>
+</html>
