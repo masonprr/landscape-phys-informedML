@@ -811,6 +811,16 @@
             box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4) !important;
             z-index: 100 !important;
         }
+        
+        .update-note {
+            position: absolute;
+            bottom: 20px;
+            right: 40px;
+            font-size: 0.8rem;
+            color: #666;
+            font-style: italic;
+            z-index: 50;
+        }
     </style>
 </head>
 <body>
@@ -949,6 +959,7 @@
             </div>
         </div>
         </div>
+        
        <!-- Company List Tab -->
         <div class="company-list-tab" id="companyListTab">
             <div class="list-tab-handle">List</div>
@@ -961,9 +972,11 @@
         </div>
         <div class="methodology-note">
             <div class="note-container">
-                <p><strong>Note:</strong> This landscape highlights emerging players in physics-infused AI and is not exhaustive. Some (not all) simulation giants are excluded for visual clarity and to highlight newer entrants — physics-infused AI is not a primary focus for these companies. Furthermore, non-profits like Polymathic AI, FutureHouse, and specific tools developed within larger companies — such as NVIDIA PhysicsNeMo™, are worth noting but are not included here.</p>
+                <p><strong>Note:</strong> This landscape highlights emerging players in physics-infused AI and is by no means exhaustive. Some (not all) simulation giants are excluded for visual clarity and to highlight newer entrants — physics-infused AI is not a primary focus for these companies. Furthermore, non-profits like Polymathic AI, FutureHouse, and specific tools developed within larger companies — such as NVIDIA PhysicsNeMo™, or other research projects such as the CRESt platform at MIT are worth noting but are not included here.</p>
                 <p><strong>Scope:</strong> Companies shown focus primarily on physics-based modeling and simulation rather than LLM-based tools for document processing, literature review, or scientific and engineering communication—though some may incorporate language capabilities alongside their core physics modeling.</p>
-                <p><strong>Framework Logic:</strong> The axes reflect primary value propositions, not absolute approaches. The vertical axis distinguishes between companies building "Specialized Models" for specific domains versus "Generalized Foundation Models" that work across multiple physics areas. The horizontal axis separates "Research-Heavy" companies developing novel algorithms and deep technical moats from "Tech-Agnostic" companies focused on accessible platforms and user experience. Most companies will offer a mix of capabilities across multiple quadrants.</p>            </div>
+                <p><strong>Framework Logic:</strong> The axes reflect primary value propositions, not absolute approaches. The vertical axis distinguishes between companies building "Specialized Models" for specific domains versus "Generalized Foundation Models" that work across multiple physics areas. The horizontal axis separates "Research-Heavy" companies developing novel algorithms and deep technical moats from "Tech-Agnostic" companies focused on accessible platforms and user experience. Most companies will offer a mix of capabilities across multiple quadrants.</p>
+                <div class="update-note">Updated: October, 2025</div>
+            </div>
 
     <!-- Info Panel -->
     <div class="info-panel" id="infoPanel">
@@ -1573,7 +1586,42 @@
     "Index Ventures",
     "angel investors"
   ]
+},
+    {
+  name: "LEAP 71",
+  description: "LEAP 71 pioneers Computational Engineering, using AI models like Noyron to autonomously design and validate advanced physical products—ready for production with digital manufacturing, from aerospace to bioprinting.",
+  website: "https://leap71.com/",
+  techScore: 2,
+  generalizabilityScore: 8, // Multi-domain: aerospace, mechanical, manufacturing, bio, etc.
+  domains: ['CSI', 'MM', 'MI', 'MC', 'CDP'],
+  totalRaised: null,
+  lastRound: null,
+  valuation: null,
+  investors: null
+},
+{
+  name: "Periodic Labs",
+  description: "Periodic Labs is building AI scientists and autonomous labs to accelerate discovery in the physical sciences—combining AI models, robotics, and real-world experimentation to invent new materials and solve fundamental challenges in physics, chemistry, and engineering.",
+  website: "https://periodic.com/",
+  techScore: 1, // Ambitious novel effort to automate science, develop AI that pioneers new scientific knowledge, and create self-driving labs
+  generalizabilityScore: 9, // Approach can extend across materials, chemistry, physics, and cross-domain industry problems
+  domains: ['LSB', 'MC', 'MM', 'MI', 'CSI', 'CDP'],
+  totalRaised: 300,
+  lastRound: "Seed (2025)",
+  valuation: null,
+  investors: [
+    "a16z",
+    "Felicis",
+    "DST",
+    "NVentures",
+    "Accel",
+    "Jeff Bezos",
+    "Elad Gil",
+    "Eric Schmidt",
+    "Jeff Dean"
+  ]
 }
+
         ];
 
         let originalPositions = new Map();
